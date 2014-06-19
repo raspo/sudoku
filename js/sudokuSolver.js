@@ -1,9 +1,10 @@
 window.sudoku = window.sudoku || {};
 
-window.sudoku.solver = (function(){
+window.sudoku.solver = function( options ){
 
-    var size            = null,
-        sectorsSize     = null,
+    var renderer            = null,
+        dimension           = null,
+        sectorsDimension    = null,
         counters        = {
             masterCycle     : 0,
             cellsCycle      : 0,
@@ -12,7 +13,6 @@ window.sudoku.solver = (function(){
             sectorsCycle    : 0
         },
         cycleCounter    = 0,
-        dataArray       = [],
         time            = {
             start   : null,
             finish  : null
@@ -100,7 +100,7 @@ window.sudoku.solver = (function(){
         },
         buildValuesArray  = function(){
             var values = [];
-            for( var i=0; i<size; i++ ){
+            for( var i=0; i<dimension; i++ ){
                 values.push(i+1);
             }
             return values;
@@ -192,7 +192,7 @@ window.sudoku.solver = (function(){
             };
 
             this.updateView     = function(isDefault){
-                window.sudoku.updater.updateCell( this.rowIndex, this.colIndex, this.value, isDefault );
+                renderer.updateCell( this.rowIndex, this.colIndex, this.value, isDefault );
             };
 
             this.value          = null;
@@ -279,65 +279,63 @@ window.sudoku.solver = (function(){
             this.cellsIndexes   = [];
             this.missingValues  = buildValuesArray();
         },
-        parseData       = function(){
-            if( validateData() ){
+        parseData       = function( flatData ){
+            var cellValue   = null,
+                rowIndex    = 0,
+                colIndex    = 0,
+                sectorIndex = 0;
 
-                var cellValue   = null,
-                    rowIndex    = 0,
-                    colIndex    = 0,
-                    sectorIndex = 0;
+            // build empty arrays of rows, cols and sectors objects
+            for( var j=0; j<dimension; j++ ){
+                store.rows.push( new cellsGroupObject(j, 'row') );
+                store.cols.push( new cellsGroupObject(j, 'col') );
+                store.sectors.push( new cellsGroupObject(j, 'sector') );
+            }
 
-                // build empty arrays of rows, cols and sectors objects
-                for( var j=0; j<size; j++ ){
-                    store.rows.push( new cellsGroupObject(j, 'row') );
-                    store.cols.push( new cellsGroupObject(j, 'col') );
-                    store.sectors.push( new cellsGroupObject(j, 'sector') );
+            // loop through each item of the flat flatData
+            for( var i=0; i<flatData.length; i++ ){
+
+                if( (i !== 0) && (i % dimension === 0) ){
+                    rowIndex += 1;
                 }
 
-                // loop through each item of the flat dataArray
-                for( var i=0; i<dataArray.length; i++ ){
+                colIndex = i % dimension;
 
-                    if( (i !== 0) && (i % size === 0) ){
-                        rowIndex += 1;
-                    }
-
-                    colIndex = i % size;
-
-                    // figure out the sector index
-                    if(colIndex % sectorsSize === 0){
-                        sectorIndex = (Math.floor( rowIndex / sectorsSize ) * sectorsSize) + (colIndex / sectorsSize);
-                    }
-
-                    store.cells.push( new cellObject({
-                        value   : null,
-                        id      : i,
-                        row     : rowIndex,
-                        col     : colIndex,
-                        sector  : sectorIndex
-                    }) );
-
-                    // add a reference to the cell id on each row, col and sector
-                    store.rows[ rowIndex ].addCell( i );
-                    store.cols[ colIndex ].addCell( i );
-                    store.sectors[ sectorIndex ].addCell( i );
-
-                    // convert the value into a number
-                    cellValue = (dataArray[i] !== null) ? parseInt(dataArray[i], 10) : null;
-
-                    store.cells[i].setValue( cellValue, true );
+                // figure out the sector index
+                if(colIndex % sectorsDimension === 0){
+                    sectorIndex = (Math.floor( rowIndex / sectorsDimension ) * sectorsDimension) + (colIndex / sectorsDimension);
                 }
 
-            } else {
-                console.error('invalid data provived by the sudoku.reader module');
+                store.cells.push( new cellObject({
+                    value   : null,
+                    id      : i,
+                    row     : rowIndex,
+                    col     : colIndex,
+                    sector  : sectorIndex
+                }) );
+
+                // add a reference to the cell id on each row, col and sector
+                store.rows[ rowIndex ].addCell( i );
+                store.cols[ colIndex ].addCell( i );
+                store.sectors[ sectorIndex ].addCell( i );
+
+                // convert the value into a number
+                cellValue = (flatData[i] !== null) ? parseInt(flatData[i], 10) : null;
+
+                store.cells[i].setValue( cellValue, true );
             }
         },
-        validateData    = function(){
-            if( dataArray.length !== Math.pow(size, 2) ){
+        validateData    = function( flatData, dimension ){
+            if( !flatData || !dimension ){
                 return false;
             }
 
-            for( var i=0; i<dataArray.length; i++ ){
-                if( dataArray[i] !== null && !dataArray[i].match(/^\d$/gi) ){
+            if( flatData.length !== Math.pow(dimension, 2) ){
+                return false;
+            }
+
+            for( var i=0; i<flatData.length; i++ ){
+                if( flatData[i] !== null && !flatData[i].match(/^\d$/gi) ){
                     return false;
                 }
             }
@@ -348,21 +346,24 @@ window.sudoku.solver = (function(){
             var diff = time.finish.getTime() - time.start.getTime();
             console.log('execution time: ' + diff);
         },
-        init            = function( selector, sectorSize ){
-
+        init            = function( params ){
             time.start = new Date();
 
-            console.log('initializing sudoku.solver');
+            console.log('sudoku.solver - Initializing');
 
-            // store the size of the schema
-            sectorsSize = sectorSize;
-            size = Math.pow(sectorsSize, 2);
+            if( !validateData( params.data, params.dimension ) ){
+                console.error('sudoku.solver - Invalid data');
+                return false;
+            }
 
-            dataArray = window.sudoku.reader.init( selector );
-            window.sudoku.updater.init( selector );
+            // store the dimensions
+            dimension = params.dimension;
+            sectorsDimension = Math.sqrt(dimension);
 
-            // parse the data array provived by the sudoku.reader module
-            parseData();
+            renderer = params.renderer;
+
+            // parse the flat data array
+            parseData( params.data );
 
             cycle();
 
@@ -373,8 +374,6 @@ window.sudoku.solver = (function(){
             console.log(counters);
         };
 
-    return {
-        init  : init
-    };
-
-}());
+    // initialize
+    init( options );
+};
