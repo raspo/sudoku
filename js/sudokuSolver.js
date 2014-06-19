@@ -54,7 +54,7 @@ window.sudoku.solver = (function(){
                     }
                 }
 
-                console.log('still missing these', missing);
+                console.log( missing.length + ' are still missing', missing);
 
             }
         },
