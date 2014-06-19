@@ -124,82 +124,45 @@ textarea:focus{
 
 
 /* ========================================================================== */
-/* COMMON
-/* ========================================================================== */
-
-.clear{
-    clear: both;
-}
-
-/* - Micro Clearfix - */
-
-.cf:before, .cf:after {
-    content: "";
-    display: table;
-}
-.cf:after {
-    clear: both;
-}
-.cf {
-    zoom: 1;
-}
-
-
-/* ========================================================================== */
-/* TYPOGRAPHY
+/* MAIN
 /* ========================================================================== */
 
 body{
     font: 16px sans-serif;
     color: #333;
+    background: #f9f9f9;
 }
 
-a{
-
+.wrap{
+    width: 440px;
+    margin: 0 auto;
 }
 
-a:hover{
-
-}
-
-p{
-    margin-bottom: 10px;
-    line-height: 1.4em;
-}
-
-h1, h2, h3, h4, h5, h6{
+header{
+    padding: 10px 0;
+    background: #fff;
+    border-bottom: 1px solid #ddd;
 }
 
 h1 {
-    font-size: 2em;
     margin: 0.67em 0;
+    font-size: 2em;
+    font-family: Georgia, serif;
+    font-weight: normal;
+    text-align: center;
+}
+
+h1 small{
+    font-size: 12px;
+    font-family: sans-serif;
 }
 
 h2 {
-    font-size: 1.5em;
-    margin: 0.83em 0;
+    margin: 0.6em 0;
+    font-size: 1.4em;
+    font-family: Georgia, serif;
+    font-weight: normal;
 }
-
-h3 {
-    font-size: 1.17em;
-    margin: 1em 0;
-}
-
-h4 {
-    font-size: 1em;
-    margin: 1.33em 0;
-}
-
-h5 {
-    font-size: 0.83em;
-    margin: 1.67em 0;
-}
-
-h6 {
-    font-size: 0.75em;
-    margin: 2.33em 0;
-}
-
 
 /* - Selection Color - */
 
@@ -215,27 +178,16 @@ h6 {
 
 
 /* ========================================================================== */
-/* MAIN
+/* SUDOKU
 /* ========================================================================== */
 
-h1{
-    text-align: center;
+.sudoku_wrapper{
+    padding: 20px 40px;
+    border-bottom: 1px solid #ddd;
 }
 
-.wrap{
-    width: 360px;
-    margin: 0 auto;
-}
-
-/* ========================================================================== */
-/* SUDOKU TABLE
-/* ========================================================================== */
-
-
-
-.wrap{
-    width: 360px;
-    margin: 100px auto;
+.sudoku_wrapper:last-child{
+    border-bottom: none;
 }
 
 .sudoku{

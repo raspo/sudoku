@@ -239,8 +239,6 @@ window.sudoku.solver = function( options ){
 
                     if( missingCounter === 1 ){
 
-                        console.log('FOUND YA ' +this.type + ' '+ this.id +' ===== '+ this.cell( cellId ).rowIndex +' -|- ' + this.cell( cellId ).colIndex +' -|- '+ cellId +  ' -|- ' + this.missingValues[i] );
-
                         this.cell( cellId ).setValue( this.missingValues[i] );
 
                         return true;
