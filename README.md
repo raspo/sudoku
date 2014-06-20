@@ -20,5 +20,5 @@ The script is composed of three modules:
 The idea is that one could swap any of those modules and still have it all working. 
 Let's say you want to read sudoku puzzles by loading them from somewhere else via ajax, you just need to change the **sudoku.reader** module.
 
-Again, this is all pointless ... it's just an exercise. 
-Please don't hate ;)
+
+Again, this is all pointless ... Please don't hate ;)
