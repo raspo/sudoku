@@ -5,26 +5,27 @@ window.sudoku.solver = function( options ){
     var renderer            = {},
         dimension           = null,
         sectorsDimension    = null,
-        counters        = {
+        counters            = {
             masterCycle     : 0,
             cellsCycle      : 0,
             rowsCycle       : 0,
             colsCycle       : 0,
             sectorsCycle    : 0
         },
-        cycleCounter    = 0,
-        time            = {
+        cycleCounter        = 0,
+        time                = {
             start   : null,
             finish  : null
         },
-        store           = {
+        store               = {
             cells   : [],
             rows    : [],
             cols    : [],
             sectors : [],
             found   : []
         },
-        cycle           = function(){
+        mode                = 'normal',
+        cycle               = function(){
             counters.masterCycle += 1;
 
             var foundbeforeCycle = store.found.length;
@@ -34,6 +35,9 @@ window.sudoku.solver = function( options ){
             cycleCols();
             cycleSectors();
 
+            checkResults( foundbeforeCycle );
+        },
+        checkResults        = function( foundbeforeCycle ){
             if( store.found.length === store.cells.length ){
 
                 console.log('found solution!');
@@ -41,23 +45,49 @@ window.sudoku.solver = function( options ){
 
             } else if( foundbeforeCycle !== store.found.length ){
 
-                cycle();
+                if( mode === 'brutal' ){
+
+                    brutalCycle();
+
+                } else {
+
+                    cycle();
+
+                }
 
             } else {
 
-                console.log('cannot find solution!');
+                if( mode === 'normal' ){
 
-                var missing = [];
+                    // go into brutal mode
+                    mode = 'brutal';
+                    brutalCycle();
 
-                for( var i=0; i<store.cells.length; i++ ){
-                    if( !store.cells[i].hasValue() ){
-                        missing.push( store.cells[i] );
+                } else {
+
+                    console.log('cannot find solution!');
+
+                    var missing = [];
+
+                    for( var i=0; i<store.cells.length; i++ ){
+                        if( !store.cells[i].hasValue() ){
+                            missing.push( store.cells[i] );
+                        }
                     }
+
+                    console.log( missing.length + ' are still missing', missing);
+
                 }
-
-                console.log( missing.length + ' are still missing', missing);
-
             }
+        },
+        brutalCycle         = function(){
+            counters.masterCycle += 1;
+
+            var foundbeforeCycle = store.found.length;
+
+            console.log('ENGAGE BRUTAL MODE');
+
+            checkResults( foundbeforeCycle );
         },
         cycleCells      = function(){
             counters.cellsCycle += 1;
