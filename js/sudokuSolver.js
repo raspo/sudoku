@@ -2,7 +2,7 @@ window.sudoku = window.sudoku || {};
 
 window.sudoku.solver = function( options ){
 
-    var renderer            = null,
+    var renderer            = {},
         dimension           = null,
         sectorsDimension    = null,
         counters        = {
@@ -37,6 +37,7 @@ window.sudoku.solver = function( options ){
             if( store.found.length === store.cells.length ){
 
                 console.log('found solution!');
+                renderer.complete();
 
             } else if( foundbeforeCycle !== store.found.length ){
 

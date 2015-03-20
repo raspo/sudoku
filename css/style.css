@@ -191,8 +191,8 @@ h2 {
 }
 
 .sudoku{
+    clear: both;
     border: 2px solid #333;
-    margin: 0 0 50px;
 }
 
 .sudoku td{
@@ -232,4 +232,28 @@ h2 {
 }
 .sudoku td.v-computed.v-double{
     background: blue;
+}
+
+.sudoku_buttons{
+    clear: both;
+    text-align: right;
+    padding: 15px 0 10px;
+}
+
+.sudoku_solve{
+    display: inline-block;
+    margin: 0;
+    line-height: 1em;
+    padding: 0.5em 1.11em;
+    font-size: 0.9em;
+    color: #fff;
+    text-shadow: 0 1px 0 rgba(0, 0, 0, 0.3);
+    text-decoration: none;
+    background: #51ae6a;
+    border: 1px solid #46975c;
+    border-radius: 3px;
+    cursor: pointer;
+}
+.sudoku_solve:hover{
+    background: #499d5f;
 }
