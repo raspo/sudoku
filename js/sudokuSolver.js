@@ -1,19 +1,15 @@
 window.sudoku = window.sudoku || {};
 
 window.sudoku.solver = function( options ){
+    'use strict';
 
     var renderer            = null,
         dimension           = null,
         sectorsDimension    = null,
         counters            = {
-            masterCycle     : 0,
-            cellsCycle      : 0,
-            rowsCycle       : 0,
-            colsCycle       : 0,
-            sectorsCycle    : 0,
+            foundvalues     : 0,
             backtracks      : 0
         },
-        cycleCounter        = 0,
         time                = {
             start   : null,
             finish  : null
@@ -25,19 +21,6 @@ window.sudoku.solver = function( options ){
             sectors : [],
             found   : []
         },
-        mode                = 'normal',
-        // cycle               = function(){
-        //     counters.masterCycle += 1;
-
-        //     var foundbeforeCycle = store.found.length;
-
-        //     cycleCells();
-        //     cycleRows();
-        //     cycleCols();
-        //     cycleSectors();
-
-        //     checkResults( foundbeforeCycle );
-        // },
 
         updateView          = function( isDefault ){
             if( renderer ){
@@ -54,129 +37,26 @@ window.sudoku.solver = function( options ){
         },
 
         checkResults        = function( foundbeforeCycle ){
-
             var missing = getMissing();
 
             updateView();
 
             if( missing.length === 0 ){
+
                 console.log('found solution!');
-                renderer.complete();
+
+                if( renderer ){
+                    renderer.complete();
+                }
+
             } else {
 
-                // if( mode === 'normal' ){
-
-                //     // go into brutal mode
-                //     mode = 'brutal';
-                //     brutalCycle();
-
-                // } else {
-
-                    console.log('cannot find solution!');
-                    console.log( missing.length + ' are still missing', missing);
-
-                // }
-
+                console.log('cannot find solution!');
 
             }
-
-            // if( store.found.length === store.cells.length ){
-
-
-
-
-            // } else if( foundbeforeCycle !== store.found.length ){
-
-            //     if( mode === 'brutal' ){
-
-            //         brutalCycle();
-
-            //     } else {
-
-            //         cycle();
-
-            //     }
-
-            // } else {
-
-            //     if( mode === 'normal' ){
-
-            //         // go into brutal mode
-            //         mode = 'brutal';
-            //         brutalCycle();
-
-            //     } else {
-
-            //         console.log('cannot find solution!');
-
-            //         var missing = getMissing();
-
-            //         console.log( missing.length + ' are still missing', missing);
-
-            //     }
-            // }
         },
-        // brutalCycle         = function(){
-        //     counters.masterCycle += 1;
-
-        //     var foundbeforeCycle = store.found.length;
-
-        //     // console.log('ENGAGE BRUTAL MODE');
-
-        //     var missing         = getMissing(),
-        //         foundValue      = false,
-        //         possibleValue   = 0,
-        //         cell            = null;
-
-        //     for(var i=0; i<missing.length;){
-
-        //         if( i < 0 ){ break; }
-
-        //         possibleValue = store.cells[i].value + 1;
-        //         foundValue = false;
-
-        //         console.log(possibleValue);
-        //         //cell.log();
-
-        //         while( !foundValue && possibleValue <= dimension ) {
-
-        //             console.log('checking value: ' + possibleValue);
-
-        //             if( !store.cells[i].checkForValue( possibleValue ) ){
-
-        //                 // If a valid value is found, mark found true,
-        //                 // set the position to the value, and move to the
-        //                 // next position
-
-        //                 foundValue = true;
-        //                 store.cells[i].setValue( possibleValue );
-        //                 i++;
-
-        //             } else {
-
-        //                 // Otherwise, try the next value
-        //                 possibleValue++;
-
-        //             }
-        //         }
-
-
-        //         if( foundValue === false ){
-        //             store.cells[i].setValue( null );
-        //             // backtrack
-        //             i = i-1;
-        //             counters.backtracks += 1;
-
-        //             console.log('BACKTRACKKKK');
-        //         }
-        //     }
-
-        //     //checkResults( foundbeforeCycle );
-        // },
 
         solve           = function(){
-            counters.masterCycle += 1;
-
             var missing     = getMissing(),
                 foundValue  = false,
                 testValue   = 0,
@@ -197,10 +77,9 @@ window.sudoku.solver = function( options ){
 
                     if( checkValue( cell.row, cell.col, cell.sector, testValue ) ){
 
-                        // If a valid value is found, mark found true,
-                        // set the position to the value, and move to the
-                        // next position
+                        // If a valid value is found, move to the next position
 
+                        counters.foundvalues += 1;
                         foundValue = true;
                         setValue( cellIndex, testValue );
                         i++;
@@ -226,39 +105,17 @@ window.sudoku.solver = function( options ){
 
         checkValue          = function( row, col, sector, value ){
             if(value && value <= dimension){
-                if( checkRow( row, value ) && checkCol( col, value ) && checkSector( sector, value ) ){
+                if( checkGroup( 'rows', row, value ) && checkGroup( 'cols', col, value ) && checkGroup( 'sectors', sector, value ) ){
                     return true;
                 }
             }
             return false;
         },
 
-        checkRow        = function(rowIndex, value){
+        checkGroup          = function( groupType, groupIndex, value){
             var isValidValue = true;
-            for( var i=0; i<store.rows[rowIndex].length; i++ ){
-                var cellIndex = store.rows[rowIndex][i];
-                if( store.cells[cellIndex].value === value ){
-                    return false;
-                }
-            }
-            return isValidValue;
-        },
-
-        checkSector     = function(sectorIndex, value){
-            var isValidValue = true;
-            for( var i=0; i<store.sectors[sectorIndex].length; i++ ){
-                var cellIndex = store.sectors[sectorIndex][i];
-                if( store.cells[cellIndex].value === value ){
-                    return false;
-                }
-            }
-            return isValidValue;
-        },
-
-        checkCol        = function(colIndex, value){
-            var isValidValue = true;
-            for( var i=0; i<store.cols[colIndex].length; i++ ){
-                var cellIndex = store.cols[colIndex][i];
+            for( var i=0; i<store[groupType][groupIndex].length; i++ ){
+                var cellIndex = store[groupType][groupIndex][i];
                 if( store.cells[cellIndex].value === value ){
                     return false;
                 }
@@ -329,7 +186,7 @@ window.sudoku.solver = function( options ){
         setValue       = function( cellIndex, value ){
             var cell = store.cells[ cellIndex ];
             cell.value = value;
-        };
+        },
 
         validateData    = function( flatData, dimension ){
             if( !flatData || !dimension ){
@@ -350,12 +207,12 @@ window.sudoku.solver = function( options ){
         },
         calculateTime   = function(){
             var diff = time.finish.getTime() - time.start.getTime();
-            console.log('execution time: ' + diff);
+            console.log('execution time: ' + diff +'ms');
         },
         init            = function( params ){
             time.start = new Date();
 
-            console.log('sudoku.solver - Initializing');
+            // console.log('sudoku.solver - Initializing');
 
             if( !validateData( params.data, params.dimension ) ){
                 console.error('sudoku.solver - Invalid data');

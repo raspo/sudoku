@@ -21,8 +21,10 @@ window.sudoku.solve = function(params){
     // add a reference to the renderer onto the options object
     options.renderer = new window.sudoku.renderer( options );
 
-    // TODO
-    // storing the solver instance is pretty much pointless at this stage
-    // will probably do something with it later
-    var solver = new window.sudoku.solver( options );
+    if( !options.renderer.isComplete() ){
+        // TODO
+        // storing the solver instance is pretty much pointless at this stage
+        // will probably do something with it later
+        var solver = new window.sudoku.solver( options );
+    }
 };

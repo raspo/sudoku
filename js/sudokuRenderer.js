@@ -24,7 +24,7 @@ window.sudoku.renderer = function( options ){
             isComplete = true;
         },
         init        = function( options ){
-            console.log('sudoku.renderer - Initializing');
+            // console.log('sudoku.renderer - Initializing');
 
             element = $( options.element );
 
@@ -33,9 +33,10 @@ window.sudoku.renderer = function( options ){
             }
         };
 
-    // expose updateCell and complete as a public methods
+    // public methods
     this.updateCell = updateCell;
     this.complete = complete;
+    this.isComplete = function(){ return isComplete; };
 
     // initialize
     init( options );
