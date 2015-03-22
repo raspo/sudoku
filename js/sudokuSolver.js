@@ -2,7 +2,7 @@ window.sudoku = window.sudoku || {};
 
 window.sudoku.solver = function( options ){
 
-    var renderer            = {},
+    var renderer            = null,
         dimension           = null,
         sectorsDimension    = null,
         counters            = {
@@ -10,7 +10,8 @@ window.sudoku.solver = function( options ){
             cellsCycle      : 0,
             rowsCycle       : 0,
             colsCycle       : 0,
-            sectorsCycle    : 0
+            sectorsCycle    : 0,
+            backtracks      : 0
         },
         cycleCounter        = 0,
         time                = {
@@ -25,289 +26,256 @@ window.sudoku.solver = function( options ){
             found   : []
         },
         mode                = 'normal',
-        cycle               = function(){
-            counters.masterCycle += 1;
+        // cycle               = function(){
+        //     counters.masterCycle += 1;
 
-            var foundbeforeCycle = store.found.length;
+        //     var foundbeforeCycle = store.found.length;
 
-            cycleCells();
-            cycleRows();
-            cycleCols();
-            cycleSectors();
+        //     cycleCells();
+        //     cycleRows();
+        //     cycleCols();
+        //     cycleSectors();
 
-            checkResults( foundbeforeCycle );
+        //     checkResults( foundbeforeCycle );
+        // },
+
+        updateView          = function( isDefault ){
+            if( renderer ){
+                for(var i=0; i<store.cells.length; i++){
+
+                    var cell = store.cells[i];
+
+                    if( cell.value && !cell.isRendered ){
+                        cell.isRendered = true;
+                        renderer.updateCell( cell.row, cell.col, cell.value, isDefault );
+                    }
+                }
+            }
         },
-        checkResults        = function( foundbeforeCycle ){
-            if( store.found.length === store.cells.length ){
 
+        checkResults        = function( foundbeforeCycle ){
+
+            var missing = getMissing();
+
+            updateView();
+
+            if( missing.length === 0 ){
                 console.log('found solution!');
                 renderer.complete();
-
-            } else if( foundbeforeCycle !== store.found.length ){
-
-                if( mode === 'brutal' ){
-
-                    brutalCycle();
-
-                } else {
-
-                    cycle();
-
-                }
-
             } else {
 
-                if( mode === 'normal' ){
+                // if( mode === 'normal' ){
 
-                    // go into brutal mode
-                    mode = 'brutal';
-                    brutalCycle();
+                //     // go into brutal mode
+                //     mode = 'brutal';
+                //     brutalCycle();
 
-                } else {
+                // } else {
 
                     console.log('cannot find solution!');
-
-                    var missing = [];
-
-                    for( var i=0; i<store.cells.length; i++ ){
-                        if( !store.cells[i].hasValue() ){
-                            missing.push( store.cells[i] );
-                        }
-                    }
-
                     console.log( missing.length + ' are still missing', missing);
 
-                }
+                // }
+
+
             }
+
+            // if( store.found.length === store.cells.length ){
+
+
+
+
+            // } else if( foundbeforeCycle !== store.found.length ){
+
+            //     if( mode === 'brutal' ){
+
+            //         brutalCycle();
+
+            //     } else {
+
+            //         cycle();
+
+            //     }
+
+            // } else {
+
+            //     if( mode === 'normal' ){
+
+            //         // go into brutal mode
+            //         mode = 'brutal';
+            //         brutalCycle();
+
+            //     } else {
+
+            //         console.log('cannot find solution!');
+
+            //         var missing = getMissing();
+
+            //         console.log( missing.length + ' are still missing', missing);
+
+            //     }
+            // }
         },
-        brutalCycle         = function(){
+        // brutalCycle         = function(){
+        //     counters.masterCycle += 1;
+
+        //     var foundbeforeCycle = store.found.length;
+
+        //     // console.log('ENGAGE BRUTAL MODE');
+
+        //     var missing         = getMissing(),
+        //         foundValue      = false,
+        //         possibleValue   = 0,
+        //         cell            = null;
+
+        //     for(var i=0; i<missing.length;){
+
+        //         if( i < 0 ){ break; }
+
+        //         possibleValue = store.cells[i].value + 1;
+        //         foundValue = false;
+
+        //         console.log(possibleValue);
+        //         //cell.log();
+
+        //         while( !foundValue && possibleValue <= dimension ) {
+
+        //             console.log('checking value: ' + possibleValue);
+
+        //             if( !store.cells[i].checkForValue( possibleValue ) ){
+
+        //                 // If a valid value is found, mark found true,
+        //                 // set the position to the value, and move to the
+        //                 // next position
+
+        //                 foundValue = true;
+        //                 store.cells[i].setValue( possibleValue );
+        //                 i++;
+
+        //             } else {
+
+        //                 // Otherwise, try the next value
+        //                 possibleValue++;
+
+        //             }
+        //         }
+
+
+        //         if( foundValue === false ){
+        //             store.cells[i].setValue( null );
+        //             // backtrack
+        //             i = i-1;
+        //             counters.backtracks += 1;
+
+        //             console.log('BACKTRACKKKK');
+        //         }
+        //     }
+
+        //     //checkResults( foundbeforeCycle );
+        // },
+
+        solve           = function(){
             counters.masterCycle += 1;
 
-            var foundbeforeCycle = store.found.length;
+            var missing     = getMissing(),
+                foundValue  = false,
+                testValue   = 0,
+                cellIndex   = 0,
+                cell        = null;
 
-            console.log('ENGAGE BRUTAL MODE');
+            for(var i=0; i<missing.length;){
 
-            checkResults( foundbeforeCycle );
-        },
-        cycleCells      = function(){
-            counters.cellsCycle += 1;
+                if( i < 0 ){ break; }
 
-            for( var i=0; i<store.cells.length; i++ ){
-                if( store.cells[ i ].check() ){
-                    cycleCells();
-                    return;
-                }
-            }
-        },
-        cycleRows       = function(){
-            counters.rowsCycle += 1;
+                cellIndex = missing[i];
+                cell = store.cells[cellIndex];
 
-            for( var i=0; i<store.rows.length; i++ ){
-                if( store.rows[ i ].check() ){
-                    cycleRows();
-                    return;
-                }
-            }
-        },
-        cycleCols      = function(){
-            counters.colsCycle += 1;
+                testValue = cell.value + 1;
+                foundValue = false;
 
-            for( var i=0; i<store.cols.length; i++ ){
-                if( store.cols[ i ].check() ){
-                    cycleCols();
-                    return;
-                }
-            }
-        },
-        cycleSectors    = function(){
-            counters.sectorsCycle += 1;
+                while( !foundValue && testValue <= dimension ) {
 
-            for( var i=0; i<store.sectors.length; i++ ){
-                if( store.sectors[ i ].check() ){
-                    cycleSectors();
-                    return;
-                }
-            }
-        },
-        buildValuesArray  = function(){
-            var values = [];
-            for( var i=0; i<dimension; i++ ){
-                values.push(i+1);
-            }
-            return values;
-        },
-        cellObject      = function(params){
-            this.log            = function(){
-                console.log( 'CELL ' + this.id + ' =>  row: '+ this.rowIndex + ' - col: ' + this.colIndex + ' - sector: ' + this.sectorIndex + ' - value: ' + this.value );
-            };
+                    if( checkValue( cell.row, cell.col, cell.sector, testValue ) ){
 
-            this.check          = function(){
-                if( this.hasValue() ){ return; }
+                        // If a valid value is found, mark found true,
+                        // set the position to the value, and move to the
+                        // next position
 
-                if( this.possibleValues.length === 1 ){
-                    this.setValue( this.possibleValues[0] );
-                    return true;
-                }
+                        foundValue = true;
+                        setValue( cellIndex, testValue );
+                        i++;
 
-                for( var i=0; i<this.possibleValues.length; i++ ){
-                    if( this.checkForValue( this.possibleValues[i] ) ){
-                        this.removePossibleValue( this.possibleValues[i] );
-                        return true;
+                    } else {
+
+                        // Otherwise, try the next value
+                        testValue++;
+
                     }
                 }
-                return false;
-            };
 
-            this.removePossibleValue = function( value ){
-                var index = this.possibleValues.indexOf(value);
-                if( index !== -1 ){
-                    this.possibleValues.splice(index, 1);
+                if( foundValue === false ){
+                    setValue( cellIndex, null );
+                    // backtrack
+                    i = i-1;
+                    counters.backtracks += 1;
                 }
-            };
+            }
 
-            this.checkForValue  = function( value ){
-                var foundInRow = null,
-                    foundInCol = null,
-                    foundInSector = null;
+            checkResults();
+        },
 
-                foundInRow = this.row().hasValue( value );
-                if( foundInRow ){ return true; }
-
-                foundInCol = this.col().hasValue( value );
-                if( foundInCol ){ return true; }
-
-                foundInSector = this.sector().hasValue( value );
-                if( foundInSector ){ return true; }
-
-                return false;
-            };
-
-            this.row            = function(){
-                return store.rows[ this.rowIndex ];
-            };
-
-            this.col            = function(){
-                return store.cols[ this.colIndex ];
-            };
-
-            this.sector         = function(){
-                return store.sectors[ this.sectorIndex ];
-            };
-
-            this.hasValue       = function(){
-                return (this.value !== null);
-            };
-
-            this.hasPossibleValue   = function( value ){
-                var index = this.possibleValues.indexOf(value);
-                if( index !== -1 ){
+        checkValue          = function( row, col, sector, value ){
+            if(value && value <= dimension){
+                if( checkRow( row, value ) && checkCol( col, value ) && checkSector( sector, value ) ){
                     return true;
-                } else {
+                }
+            }
+            return false;
+        },
+
+        checkRow        = function(rowIndex, value){
+            var isValidValue = true;
+            for( var i=0; i<store.rows[rowIndex].length; i++ ){
+                var cellIndex = store.rows[rowIndex][i];
+                if( store.cells[cellIndex].value === value ){
                     return false;
                 }
-            };
-
-            this.setValue       = function( value, isDefault ){
-                if( value !== null ){
-                    this.value = value;
-                    this.possibleValues = [];
-
-                    this.row().removeMissingValue( value );
-                    this.col().removeMissingValue( value );
-                    this.sector().removeMissingValue( value );
-
-                    store.found.push( this.id );
-
-                    this.updateView(isDefault);
-                }
-            };
-
-            this.updateView     = function(isDefault){
-                renderer.updateCell( this.rowIndex, this.colIndex, this.value, isDefault );
-            };
-
-            this.value          = null;
-            this.id             = params.id;
-            this.rowIndex       = params.row;
-            this.colIndex       = params.col;
-            this.sectorIndex    = params.sector;
-            this.possibleValues = buildValuesArray();
+            }
+            return isValidValue;
         },
-        cellsGroupObject         = function( id, type ){
-            this.log            = function(){
-                console.log(  this.type + ' ' + this.id + ' =>  missing: '+ this.missingValues.join(',') );
-            };
 
-            this.addCell        = function( cellId ){
-                // add a reference to the cell id
-                this.cellsIndexes.push( cellId );
-
-                // if the cell already has a value add this information to the cellsGroup as well
-                if( this.cell( cellId ).hasValue() ){
-                    this.addValue( this.cell( cellId ).value );
+        checkSector     = function(sectorIndex, value){
+            var isValidValue = true;
+            for( var i=0; i<store.sectors[sectorIndex].length; i++ ){
+                var cellIndex = store.sectors[sectorIndex][i];
+                if( store.cells[cellIndex].value === value ){
+                    return false;
                 }
-            };
-
-            this.check          = function(){
-                var missingCounter  = 0,
-                    cellId          = null;
-
-                for( var i=0; i<this.missingValues.length; i++ ){
-
-                    missingCounter  = 0;
-                    cellId          = null;
-
-                    for( var j=0; j<this.cellsIndexes.length; j++ ){
-
-                        if( this.cell( this.cellsIndexes[j] ).hasPossibleValue( this.missingValues[i] ) ){
-
-                            missingCounter += 1;
-                            cellId = this.cellsIndexes[j];
-
-                        }
-
-                    }
-
-                    if( missingCounter === 1 ){
-
-                        this.cell( cellId ).setValue( this.missingValues[i] );
-
-                        return true;
-                    }
-
-                }
-            };
-
-            this.removeMissingValue      = function(value){
-                var index = this.missingValues.indexOf(value);
-                if( index !== -1 ){
-                    this.missingValues.splice(index, 1);
-                }
-            };
-
-            this.hasValue = function( value ){
-                var index = this.missingValues.indexOf( value );
-                return ( index === -1 ) ? true : false;
-            };
-
-            this.addValue       = function( value ){
-                for( var i=0; i<this.missingValues.length; i++ ){
-                    if( value === this.missingValues[i] ){
-                        this.missingValues.splice(i, 1);
-                        break;
-                    }
-                }
-            };
-
-            this.cell           = function( cellId ){
-                return store.cells[ cellId ];
-            };
-
-            this.id             = id;
-            this.type           = type;
-            this.cellsIndexes   = [];
-            this.missingValues  = buildValuesArray();
+            }
+            return isValidValue;
         },
+
+        checkCol        = function(colIndex, value){
+            var isValidValue = true;
+            for( var i=0; i<store.cols[colIndex].length; i++ ){
+                var cellIndex = store.cols[colIndex][i];
+                if( store.cells[cellIndex].value === value ){
+                    return false;
+                }
+            }
+            return isValidValue;
+        },
+
+        getMissing      = function(){
+            var missing = [];
+            for( var i=0; i<store.cells.length; i++ ){
+                if( !store.cells[i].value ){
+                    missing.push( i );
+                }
+            }
+            return missing;
+        },
+
         parseData       = function( flatData ){
             var cellValue   = null,
                 rowIndex    = 0,
@@ -316,9 +284,9 @@ window.sudoku.solver = function( options ){
 
             // build empty arrays of rows, cols and sectors objects
             for( var j=0; j<dimension; j++ ){
-                store.rows.push( new cellsGroupObject(j, 'row') );
-                store.cols.push( new cellsGroupObject(j, 'col') );
-                store.sectors.push( new cellsGroupObject(j, 'sector') );
+                store.rows.push([]);
+                store.cols.push([]);
+                store.sectors.push([]);
             }
 
             // loop through each item of the flat flatData
@@ -335,25 +303,34 @@ window.sudoku.solver = function( options ){
                     sectorIndex = (Math.floor( rowIndex / sectorsDimension ) * sectorsDimension) + (colIndex / sectorsDimension);
                 }
 
-                store.cells.push( new cellObject({
-                    value   : null,
-                    id      : i,
-                    row     : rowIndex,
-                    col     : colIndex,
-                    sector  : sectorIndex
-                }) );
+                store.cells[ i ] = {
+                    value       : null,
+                    id          : i,
+                    row         : rowIndex,
+                    col         : colIndex,
+                    sector      : sectorIndex,
+                    isRendered  : false
+                };
 
                 // add a reference to the cell id on each row, col and sector
-                store.rows[ rowIndex ].addCell( i );
-                store.cols[ colIndex ].addCell( i );
-                store.sectors[ sectorIndex ].addCell( i );
+                store.rows[ rowIndex ].push(i);
+                store.cols[ colIndex ].push(i);
+                store.sectors[ sectorIndex ].push(i);
 
                 // convert the value into a number
                 cellValue = (flatData[i] !== null) ? parseInt(flatData[i], 10) : null;
 
-                store.cells[i].setValue( cellValue, true );
+                setValue( i, cellValue, true );
             }
+
+            updateView(true);
         },
+
+        setValue       = function( cellIndex, value ){
+            var cell = store.cells[ cellIndex ];
+            cell.value = value;
+        };
+
         validateData    = function( flatData, dimension ){
             if( !flatData || !dimension ){
                 return false;
@@ -394,7 +371,7 @@ window.sudoku.solver = function( options ){
             // parse the flat data array
             parseData( params.data );
 
-            cycle();
+            solve();
 
             time.finish = new Date();
 
